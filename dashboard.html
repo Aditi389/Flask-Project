@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - AdOptimizer AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <!-- Add Chart.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="{{ url_for('home') }}" class="navbar-brand">AdOptimizer AI</a>
+        <ul class="navbar-menu">
+            <li><a href="javascript:void(0)" onclick="goHome()">Home</a></li>
+            <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('ml_insights') }}">ML Insights</a></li>
+            <li><a href="{{ url_for('optimization') }}">Optimization</a></li>
+            <li><a href="{{ url_for('contact_page') }}">Contact</a></li>
+            <li><button class="btn-logout" onclick="logout()">Logout</button></li>
+        </ul>
+    </nav>
+    
+    <div class="container-full">
+        <div class="container">
+            <h1>Campaign Dashboard</h1>
+            
+            <!-- Controls Bar -->
+            <div class="controls-bar">
+                <div class="filter-group">
+                    <label for="timeRange">Time Range:</label>
+                    <select id="timeRange">
+                        <option value="7">Last 7 days</option>
+                        <option value="30" selected>Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                    </select>
+                    
+                    <label for="platform">Platform:</label>
+                    <select id="platform">
+                        <option value="all">All Platforms</option>
+                        <option value="google">Google Ads</option>
+                        <option value="facebook">Facebook Ads</option>
+                        <option value="instagram">Instagram Ads</option>
+                    </select>
+                </div>
+                
+                <button id="syncData" class="btn-secondary">Sync Latest Data</button>
+            </div>
+            
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Loading metrics...</p>
+            </div>
+            
+            <!-- Metrics Grid -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Click-Through Rate</div>
+                    <div class="metric-value" id="ctrValue">3.42%</div>
+                    <div class="metric-change positive">↑ 0.8% from last period</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">Cost Per Click</div>
+                    <div class="metric-value" id="cpcValue">\$18.50</div>
+                    <div class="metric-change negative">↑ \$2.30 from last period</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">Conversions</div>
+                    <div class="metric-value" id="conversionsValue">1,247</div>
+                    <div class="metric-change positive">↑ 156 from last period</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">ROAS</div>
+                    <div class="metric-value" id="roasValue">4.2x</div>
+                    <div class="metric-change positive">↑ 0.6x from last period</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">Total Spend</div>
+                    <div class="metric-value" id="spendValue">\$12,450</div>
+                    <div class="metric-change">Last 30 days</div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-label">Engagement Rate</div>
+                    <div class="metric-value" id="engagementValue">5.67%</div>
+                    <div class="metric-change positive">↑ 1.2% from last period</div>
+                </div>
+            </div>
+            
+            <!-- Charts Section -->
+            <div class="charts-section">
+                <div class="chart-card">
+                    <h3>Impressions vs CTR Over Time</h3>
+                    <div class="chart-container">
+                        <canvas id="impressionsCtrChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>Campaign Performance Comparison</h3>
+                    <div class="chart-container">
+                        <canvas id="campaignPerformanceChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <h3>Channel Performance Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="channelDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize charts when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Impressions vs CTR Line Chart
+            const impressionsCtrCtx = document.getElementById('impressionsCtrChart').getContext('2d');
+            const impressionsCtrChart = new Chart(impressionsCtrCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [
+                        {
+                            label: 'Impressions',
+                            data: [12000, 19000, 15000, 25000],
+                            borderColor: '#5B9EE8',
+                            backgroundColor: 'rgba(91, 158, 232, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'CTR (%)',
+                            data: [2.8, 3.1, 3.5, 3.9],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Impressions'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'CTR (%)'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                        }
+                    }
+                }
+            });
+
+            // Campaign Performance Bar Chart
+            const campaignPerformanceCtx = document.getElementById('campaignPerformanceChart').getContext('2d');
+            const campaignPerformanceChart = new Chart(campaignPerformanceCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Q4 Google Ads', 'Facebook Prospecting', 'Instagram Story', 'LinkedIn B2B'],
+                    datasets: [
+                        {
+                            label: 'CTR (%)',
+                            data: [4.2, 3.8, 5.1, 2.9],
+                            backgroundColor: '#5B9EE8',
+                            borderColor: '#4A8DD6',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Conversions',
+                            data: [450, 320, 280, 190],
+                            backgroundColor: '#10b981',
+                            borderColor: '#0da271',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'ROAS',
+                            data: [4.8, 3.5, 5.2, 2.7],
+                            backgroundColor: '#f59e0b',
+                            borderColor: '#d97706',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Channel Performance Distribution Pie Chart
+            const channelDistributionCtx = document.getElementById('channelDistributionChart').getContext('2d');
+            const channelDistributionChart = new Chart(channelDistributionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Google Ads', 'Facebook Ads', 'Instagram Ads', 'LinkedIn Ads'],
+                    datasets: [{
+                        data: [45, 25, 20, 10],
+                        backgroundColor: [
+                            '#5B9EE8',
+                            '#10b981',
+                            '#f59e0b',
+                            '#ef4444'
+                        ],
+                        borderColor: [
+                            '#4A8DD6',
+                            '#0da271',
+                            '#d97706',
+                            '#dc2626'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.parsed}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Update charts when time range changes
+            document.getElementById('timeRange').addEventListener('change', function() {
+                // In a real app, you would fetch new data from the API
+                // For this example, we'll just update with some random variations
+                updateCharts(this.value);
+            });
+
+            function updateCharts(timeRange) {
+                // Update line chart data based on time range
+                let labels, impressionsData, ctrData;
+                
+                if (timeRange === '7') {
+                    labels = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'];
+                    impressionsData = [3500, 4200, 3800, 5100, 4800, 4500, 5200];
+                    ctrData = [3.1, 3.3, 3.2, 3.5, 3.4, 3.6, 3.7];
+                } else if (timeRange === '30') {
+                    labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+                    impressionsData = [12000, 19000, 15000, 25000];
+                    ctrData = [2.8, 3.1, 3.5, 3.9];
+                } else { // 90 days
+                    labels = ['Month 1', 'Month 2', 'Month 3'];
+                    impressionsData = [45000, 52000, 61000];
+                    ctrData = [2.5, 3.2, 3.8];
+                }
+                
+                impressionsCtrChart.data.labels = labels;
+                impressionsCtrChart.data.datasets[0].data = impressionsData;
+                impressionsCtrChart.data.datasets[1].data = ctrData;
+                impressionsCtrChart.update();
+                
+                // Update other charts similarly in a real application
+            }
+        });
+        
+    </script>
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Insights - AdOptimizer AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="{{ url_for('home') }}" class="navbar-brand">AdOptimizer AI</a>
+        <ul class="navbar-menu">
+            <li><a href="javascript:void(0)" onclick="goHome()">Home</a></li>
+            <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('ml_insights') }}">ML Insights</a></li>
+            <li><a href="{{ url_for('optimization') }}">Optimization</a></li>
+            <li><a href="{{ url_for('contact_page') }}">Contact</a></li>
+            <li><button class="btn-logout" onclick="logout()">Logout</button></li>
+        </ul>
+    </nav>
+    
+    <div class="container-full">
+        <div class="container">
+            <h1>AI-Powered Campaign Predictions</h1>
+            <p>Get machine learning insights for your ad campaign performance.</p>
+            
+            <!-- Prediction Input Form -->
+            <div class="chart-card" style="margin-bottom: 2rem;">
+                <h3>Campaign Prediction Input</h3>
+                
+                <div class="form-group">
+                    <label for="impressions">Impressions:</label>
+                    <input type="number" id="impressions" class="form-input" value="10000" min="1000" step="1000">
+                </div>
+                
+                <div class="form-group">
+                    <label for="spend">Spend ($):</label>
+                    <input type="number" id="spend" class="form-input" value="1200" min="100" step="100">
+                </div>
+                
+                <div class="form-group">
+                    <label for="ctr">Current CTR (%):</label>
+                    <input type="number" id="ctr" class="form-input" value="3.0" min="0.1" max="20" step="0.1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="cpc">Current CPC ($):</label>
+                    <input type="number" id="cpc" class="form-input" value="15.2" min="1" max="50" step="0.1">
+                </div>
+                
+                <div style="text-align: center; margin-top: 1.5rem;">
+                    <button id="getPredictions" class="btn-success" style="font-size: 1.125rem; padding: 1rem 3rem;">
+                        Get AI Predictions
+                    </button>
+                </div>
+            </div>
+            
+            <div id="predictionSuccess" class="success-message"></div>
+            <div id="predictionError" class="error-message"></div>
+            <div id="predictionLoading" class="loading">
+                <div class="spinner"></div>
+                <p>Generating AI predictions...</p>
+            </div>
+            
+            <!-- Prediction Results -->
+            <div id="predictionResults">
+                <div class="table-container">
+                    <h3>Prediction Results</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Campaign</th>
+                                <th>Predicted CTR</th>
+                                <th>Predicted CPC</th>
+                                <th>Performance</th>
+                                <th>Recommendation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="predictionTableBody">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--dark-gray);">
+                                    Enter your campaign data above and click "Get AI Predictions" to see results.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- ML Recommendations -->
+                <div id="mlRecommendations" class="chart-card" style="margin-top: 2rem;">
+                    <h3>AI Recommendations</h3>
+                    <div class="recommendations-grid">
+                        <div class="recommendation-card">
+                            <h4>Budget Optimization</h4>
+                            <p>Enter campaign data to get personalized budget recommendations based on predicted performance.</p>
+                            <span class="recommendation-badge badge-medium">Pending</span>
+                        </div>
+                        
+                        <div class="recommendation-card">
+                            <h4>Channel Strategy</h4>
+                            <p>Get insights on which advertising channels will perform best for your campaign goals.</p>
+                            <span class="recommendation-badge badge-medium">Pending</span>
+                        </div>
+                        
+                        <div class="recommendation-card">
+                            <h4>Performance Insights</h4>
+                            <p>Receive detailed performance predictions and confidence scores for your campaigns.</p>
+                            <span class="recommendation-badge badge-medium">Pending</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ML Insights page JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is logged in
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            const predictButton = document.getElementById('getPredictions');
+            if (predictButton) {
+                predictButton.addEventListener('click', getPredictions);
+            }
+        });
+
+        async function getPredictions() {
+            const impressions = parseFloat(document.getElementById('impressions').value) || 10000;
+            const spend = parseFloat(document.getElementById('spend').value) || 1200;
+            const ctr = parseFloat(document.getElementById('ctr').value) / 100 || 0.03; // Convert to decimal
+            const cpc = parseFloat(document.getElementById('cpc').value) || 15.2;
+
+            const data = {
+                impressions: impressions,
+                spend: spend,
+                current_CTR: ctr,
+                current_CPC: cpc,
+                engagement_rate: 0.05 // Default value
+            };
+
+            try {
+                showLoading('predictionLoading', true);
+                hideMessage('predictionSuccess');
+                hideMessage('predictionError');
+
+                const response = await apiCall('/predict', 'POST', data);
+
+                if (response.status === 'success') {
+                    displayPredictionResults(response);
+                    showMessage('predictionSuccess', 'Predictions generated successfully!');
+                } else {
+                    showMessage('predictionError', response.message || 'Failed to generate predictions');
+                }
+            } catch (error) {
+                console.error('Prediction error:', error);
+                showMessage('predictionError', 'Failed to generate predictions. Please try again.');
+            } finally {
+                showLoading('predictionLoading', false);
+            }
+        }
+
+        function displayPredictionResults(data) {
+            const tableBody = document.getElementById('predictionTableBody');
+            
+            if (tableBody) {
+                const row = `
+                    <tr>
+                        <td>Current Campaign</td>
+                        <td>${(data.predicted_CTR * 100).toFixed(2)}%</td>
+                        <td>$${data.predicted_CPC.toFixed(2)}</td>
+                        <td><span class="recommendation-badge badge-${data.label.toLowerCase()}">${data.label}</span></td>
+                        <td>${data.recommendation}</td>
+                    </tr>
+                `;
+                tableBody.innerHTML = row;
+            }
+
+            // Update recommendations
+            updateRecommendations(data);
+        }
+
+        function updateRecommendations(data) {
+            const recommendationsDiv = document.getElementById('mlRecommendations');
+            
+            if (recommendationsDiv) {
+                const recommendations = [
+                    {
+                        title: 'Budget Optimization',
+                        description: data.recommendation || 'Consider adjusting budget based on predicted performance',
+                        badge: data.label || 'Medium'
+                    },
+                    {
+                        title: 'Channel Strategy',
+                        description: `Predicted performance level: ${data.label || 'Medium'} with strong potential`,
+                        badge: 'Recommended'
+                    },
+                    {
+                        title: 'Performance Insights',
+                        description: `CTR improvement: ${((data.predicted_CTR - (parseFloat(document.getElementById('ctr').value)/100)) * 100).toFixed(2)}% predicted`,
+                        badge: 'Insight'
+                    }
+                ];
+
+                let html = '<h3>AI Recommendations</h3><div class="recommendations-grid">';
+                recommendations.forEach(rec => {
+                    html += `
+                        <div class="recommendation-card">
+                            <h4>${rec.title}</h4>
+                            <p>${rec.description}</p>
+                            <span class="recommendation-badge badge-${rec.badge.toLowerCase().includes('high') ? 'high' : rec.badge.toLowerCase().includes('medium') ? 'medium' : 'low'}">${rec.badge}</span>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                
+                recommendationsDiv.innerHTML = html;
+            }
+        }
+
+        // Helper functions
+        function showLoading(elementId, show) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.style.display = show ? 'block' : 'none';
+            }
+        }
+
+        function showMessage(elementId, message) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.style.display = 'block';
+            }
+        }
+
+        function hideMessage(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.style.display = 'none';
+            }
+        }
+
+        // API call helper
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                }
+            };
+
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+
+            try {
+                const response = await fetch(`/api${endpoint}`, options);
+                
+                if (response.status === 401) {
+                    localStorage.removeItem('access_token');
+                    window.location.href = '/login';
+                    throw new Error('Authentication failed');
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
+            }
+        }
+    </script>
+</body>
+</html>
