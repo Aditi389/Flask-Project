@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - AdOptimizer AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Admin Navigation -->
+    <nav class="navbar admin-navbar">
+        <a href="{{ url_for('admin_dashboard') }}" class="navbar-brand">
+            <span class="iconify" data-icon="mdi:shield-crown" style="font-size: 1.75rem;"></span>
+            Admin Panel
+        </a>
+        <ul class="navbar-menu">
+            <li><a href="#users"><span class="iconify" data-icon="mdi:account-group"></span> Users</a></li>
+            <li><a href="#campaigns"><span class="iconify" data-icon="mdi:chart-line"></span> Campaigns</a></li>
+            <li><a href="#analytics"><span class="iconify" data-icon="mdi:chart-bar"></span> Analytics</a></li>
+            <li><a href="#settings"><span class="iconify" data-icon="mdi:cog"></span> Settings</a></li>
+            <li><button class="btn-logout" onclick="adminLogout()">
+                <span class="iconify" data-icon="mdi:logout"></span> Logout
+            </button></li>
+        </ul>
+    </nav>
+
+    <div class="admin-container">
+        <!-- Admin Stats Overview -->
+        <div class="admin-stats-grid">
+            <div class="admin-stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #5B9EE8, #4A8DD6);">
+                    <span class="iconify" data-icon="mdi:account-multiple" style="color: white; font-size: 2rem;"></span>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">Total Users</div>
+                    <div class="stat-value" id="totalUsers">0</div>
+                    <div class="stat-change positive">+12 this month</div>
+                </div>
+            </div>
+
+            <div class="admin-stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <span class="iconify" data-icon="mdi:cash-multiple" style="color: white; font-size: 2rem;"></span>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">Total Ad Spend</div>
+                    <div class="stat-value" id="totalSpend">$0</div>
+                    <div class="stat-change positive">+15% this month</div>
+                </div>
+            </div>
+
+            <div class="admin-stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <span class="iconify" data-icon="mdi:chart-line-variant" style="color: white; font-size: 2rem;"></span>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">Active Campaigns</div>
+                    <div class="stat-value" id="activeCampaigns">0</div>
+                    <div class="stat-change">Across all users</div>
+                </div>
+            </div>
+
+            <div class="admin-stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                    <span class="iconify" data-icon="mdi:robot" style="color: white; font-size: 2rem;"></span>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">ML Predictions</div>
+                    <div class="stat-value" id="totalPredictions">0</div>
+                    <div class="stat-change">Last 30 days</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Management Section -->
+        <section id="users" class="admin-section">
+            <div class="section-header">
+                <h2><span class="iconify" data-icon="mdi:account-group"></span> User Management</h2>
+                <button class="btn-primary" onclick="showAddUserModal()">
+                    <span class="iconify" data-icon="mdi:account-plus"></span> Add New User
+                </button>
+            </div>
+
+            <div class="admin-card">
+                <div class="search-filter-bar">
+                    <div class="search-box">
+                        <span class="iconify" data-icon="mdi:magnify"></span>
+                        <input type="text" id="userSearch" placeholder="Search users by name or email..." onkeyup="filterUsers()">
+                    </div>
+                    <select id="userRoleFilter" onchange="filterUsers()">
+                        <option value="all">All Roles</option>
+                        <option value="admin">Admin</option>
+                        <option value="user">User</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th><span class="iconify" data-icon="mdi:identifier"></span> ID</th>
+                                <th><span class="iconify" data-icon="mdi:account"></span> Username</th>
+                                <th><span class="iconify" data-icon="mdi:email"></span> Email</th>
+                                <th><span class="iconify" data-icon="mdi:shield-account"></span> Role</th>
+                                <th><span class="iconify" data-icon="mdi:calendar"></span> Created</th>
+                                <th><span class="iconify" data-icon="mdi:chart-box"></span> Campaigns</th>
+                                <th><span class="iconify" data-icon="mdi:cog"></span> Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Campaigns Management Section -->
+        <section id="campaigns" class="admin-section">
+            <div class="section-header">
+                <h2><span class="iconify" data-icon="mdi:chart-line"></span> Campaign Management</h2>
+                <div class="filter-group">
+                    <select id="campaignUserFilter" onchange="filterCampaigns()">
+                        <option value="all">All Users</option>
+                    </select>
+                    <select id="campaignPlatformFilter" onchange="filterCampaigns()">
+                        <option value="all">All Platforms</option>
+                        <option value="Google Ads">Google Ads</option>
+                        <option value="Facebook Ads">Facebook Ads</option>
+                        <option value="Instagram Ads">Instagram Ads</option>
+                        <option value="LinkedIn Ads">LinkedIn Ads</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="table-container">
+                    <table id="campaignsTable">
+                        <thead>
+                            <tr>
+                                <th><span class="iconify" data-icon="mdi:account"></span> User</th>
+                                <th><span class="iconify" data-icon="mdi:tag"></span> Campaign</th>
+                                <th><span class="iconify" data-icon="mdi:web"></span> Platform</th>
+                                <th><span class="iconify" data-icon="mdi:eye"></span> Impressions</th>
+                                <th><span class="iconify" data-icon="mdi:cursor-default-click"></span> Clicks</th>
+                                <th><span class="iconify" data-icon="mdi:cash"></span> Spend</th>
+                                <th><span class="iconify" data-icon="mdi:percent"></span> CTR</th>
+                                <th><span class="iconify" data-icon="mdi:chart-line"></span> Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="campaignsTableBody">
+                            <!-- Campaigns will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Analytics Section -->
+        <section id="analytics" class="admin-section">
+            <div class="section-header">
+                <h2><span class="iconify" data-icon="mdi:chart-bar"></span> System Analytics</h2>
+                <select id="analyticsTimeRange">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                </select>
+            </div>
+
+            <div class="charts-grid">
+                <div class="admin-card">
+                    <h3><span class="iconify" data-icon="mdi:account-multiple"></span> User Growth</h3>
+                    <div class="chart-container">
+                        <canvas id="userGrowthChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <h3><span class="iconify" data-icon="mdi:cash-multiple"></span> Revenue Trends</h3>
+                    <div class="chart-container">
+                        <canvas id="revenueTrendsChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <h3><span class="iconify" data-icon="mdi:web"></span> Platform Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="platformDistributionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <h3><span class="iconify" data-icon="mdi:robot"></span> ML Model Performance</h3>
+                    <div class="chart-container">
+                        <canvas id="mlPerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section id="settings" class="admin-section">
+            <div class="section-header">
+                <h2><span class="iconify" data-icon="mdi:cog"></span> System Settings</h2>
+            </div>
+
+            <div class="settings-grid">
+                <div class="admin-card">
+                    <h3><span class="iconify" data-icon="mdi:database"></span> Database Management</h3>
+                    <div class="settings-group">
+                        <button class="btn-secondary" onclick="backupDatabase()">
+                            <span class="iconify" data-icon="mdi:database-export"></span> Backup Database
+                        </button>
+                        <button class="btn-secondary" onclick="optimizeDatabase()">
+                            <span class="iconify" data-icon="mdi:database-cog"></span> Optimize Database
+                        </button>
+                        <button class="btn-danger" onclick="clearOldData()">
+                            <span class="iconify" data-icon="mdi:delete-sweep"></span> Clear Old Data
+                        </button>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <h3><span class="iconify" data-icon="mdi:robot"></span> ML Model Management</h3>
+                    <div class="settings-group">
+                        <button class="btn-secondary" onclick="retrainModel()">
+                            <span class="iconify" data-icon="mdi:refresh"></span> Retrain Model
+                        </button>
+                        <button class="btn-secondary" onclick="exportModel()">
+                            <span class="iconify" data-icon="mdi:download"></span> Export Model
+                        </button>
+                        <div class="model-status">
+                            <span class="status-indicator active"></span>
+                            Model Status: <strong>Active</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <h3><span class="iconify" data-icon="mdi:email"></span> Email Notifications</h3>
+                    <div class="settings-group">
+                        <div class="toggle-container">
+                            <span class="toggle-label">
+                                <span class="iconify" data-icon="mdi:bell"></span>
+                                Daily Reports
+                            </span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="dailyReports" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-container">
+                            <span class="toggle-label">
+                                <span class="iconify" data-icon="mdi:alert"></span>
+                                Alert Notifications
+                            </span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="alertNotifications" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <h3><span class="iconify" data-icon="mdi:shield-check"></span> Security Settings</h3>
+                    <div class="settings-group">
+                        <div class="toggle-container">
+                            <span class="toggle-label">
+                                <span class="iconify" data-icon="mdi:two-factor-authentication"></span>
+                                Two-Factor Authentication
+                            </span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="twoFactor">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <button class="btn-secondary" onclick="viewAuditLog()">
+                            <span class="iconify" data-icon="mdi:file-document"></span> View Audit Log
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><span class="iconify" data-icon="mdi:account-plus"></span> Add New User</h3>
+                <button class="modal-close" onclick="closeAddUserModal()">&times;</button>
+            </div>
+            <form id="addUserForm" onsubmit="addNewUser(event)">
+                <div class="form-group">
+                    <label for="newUsername">Username</label>
+                    <input type="text" id="newUsername" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="newEmail">Email</label>
+                    <input type="email" id="newEmail" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">Password</label>
+                    <input type="password" id="newPassword" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="newRole">Role</label>
+                    <select id="newRole" class="form-input">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeAddUserModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Add User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Loading admin data...</p>
+    </div>
+
+    <script src="{{ url_for('static', filename='admin.js') }}"></script>
+</body>
+</html>

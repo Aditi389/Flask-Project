@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - AdOptimizer AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+</head>
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <h1>
+                <span class="iconify" data-icon="mdi:shield-crown"></span>
+                Admin Login
+            </h1>
+            <p>Access the AdOptimizer AI Admin Panel</p>
+            
+            <div id="errorMessage" class="error-message"></div>
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+            </div>
+            
+            <form id="adminLoginForm">
+                <div class="form-group">
+                    <label for="email">
+                        <span class="iconify" data-icon="mdi:email"></span>
+                        Admin Email
+                    </label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        class="form-input" 
+                        placeholder="admin@example.com" 
+                        required
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">
+                        <span class="iconify" data-icon="mdi:lock"></span>
+                        Password
+                    </label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        class="form-input" 
+                        placeholder="Enter admin password" 
+                        required
+                    >
+                </div>
+                
+                <button type="submit" class="btn-primary">
+                    <span class="iconify" data-icon="mdi:login"></span>
+                    Login to Admin Panel
+                </button>
+            </form>
+            
+            <div class="auth-link">
+                <a href="{{ url_for('login_page') }}">← Back to User Login</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('adminLoginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            const loading = document.getElementById('loading');
+            
+            // Hide previous errors
+            errorMessage.style.display = 'none';
+            loading.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'success') {
+                    // Store admin token and role
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('user_role', 'admin');
+                    localStorage.setItem('username', data.username);
+                    
+                    // Redirect to admin dashboard
+                    window.location.href = '/admin/dashboard';
+                } else {
+                    errorMessage.textContent = data.message || 'Invalid admin credentials';
+                    errorMessage.style.display = 'flex';
+                }
+            } catch (error) {
+                console.error('Admin login error:', error);
+                errorMessage.textContent = 'An error occurred during login. Please try again.';
+                errorMessage.style.display = 'flex';
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
